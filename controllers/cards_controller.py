@@ -1,8 +1,9 @@
 from flask import Blueprint, request
-from db import db
+from init import db
 from datetime import date
-
 from models.card import Card, CardSchema
+from controllers.auth_controller import authorize
+from flask_jwt_extended import jwt_required
 
 
 # it's a container, inside, which modules - __name__ , all the path below will attach as /cards 
@@ -13,7 +14,7 @@ cards_bp = Blueprint('cards', __name__, url_prefix='/cards')
 
 # already showed as /cards, so only need to put '/'
 @cards_bp.route('/')
-# @jwt_required()  #it means we can get the token to know which user is login
+@jwt_required()  #it means we can get the token to know which user is login
 def all_cards():
     # return 'all_cards route'
     # if not authorize():
@@ -37,7 +38,10 @@ def one_card(id):
 
 
 @cards_bp.route('/<int:id>/', methods=['DELETE'])   #delete card
+@jwt_required()
 def delete_one_card(id):
+    authorize()
+
     stmt = db.select(Card).filter_by(id=id)  #specify id = id
     card = db.session.scalar(stmt)  # single card, single scalar
     if card:
@@ -49,6 +53,7 @@ def delete_one_card(id):
 
 
 @cards_bp.route('/<int:id>/', methods=['PUT', 'PATCH'])   #update card
+@jwt_required()
 def update_one_card(id):
     stmt = db.select(Card).filter_by(id=id)  #specify id = id
     card = db.session.scalar(stmt)  # single card, single scalar
@@ -66,6 +71,7 @@ def update_one_card(id):
 
 
 @cards_bp.route('/', methods=['POST'])   
+@jwt_required()
 def create_card():
     # Create a new card model instance
     card = Card(

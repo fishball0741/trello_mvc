@@ -1,4 +1,4 @@
-from db import db, ma    #< cannot do, because db is in the def
+from init import db, ma    #< cannot do, because db is in the def
 
 
 class Card(db.Model):   #Flask Alchemy data type , defining model
