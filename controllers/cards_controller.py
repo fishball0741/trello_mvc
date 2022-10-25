@@ -1,11 +1,17 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from db import db
+from datetime import date
+
 from models.card import Card, CardSchema
 
+
+# it's a container, inside, which modules - __name__ , all the path below will attach as /cards 
 cards_bp = Blueprint('cards', __name__, url_prefix='/cards')
 # url_prefix=/cards   =  you dont need to type cards in route below,  /  =  /cards 
 
 
+
+# already showed as /cards, so only need to put '/'
 @cards_bp.route('/')
 # @jwt_required()  #it means we can get the token to know which user is login
 def all_cards():
@@ -24,4 +30,53 @@ def all_cards():
 def one_card(id):
     stmt = db.select(Card).filter_by(id=id)  #specify id = id
     card = db.session.scalar(stmt)  # single card, single scalar
-    return CardSchema().dump(card)  # single card, not card's'  , delete many = true
+    if card:
+        return CardSchema().dump(card)  # single card, not card's'  , delete many = true
+    else:
+        return {'error': f"card not found with id {id}."}, 404
+
+
+@cards_bp.route('/<int:id>/', methods=['DELETE'])   #delete card
+def delete_one_card(id):
+    stmt = db.select(Card).filter_by(id=id)  #specify id = id
+    card = db.session.scalar(stmt)  # single card, single scalar
+    if card:
+        db.session.delete(card)  #delete
+        db.session.commit()  #commit = update the data
+        return {'message': f"Card '{card.title}' deleted successfully."}, 200
+    else:
+        return {'error': f"card not found with id {id}."}, 404
+
+
+@cards_bp.route('/<int:id>/', methods=['PUT', 'PATCH'])   #update card
+def update_one_card(id):
+    stmt = db.select(Card).filter_by(id=id)  #specify id = id
+    card = db.session.scalar(stmt)  # single card, single scalar
+    if card:
+        # json.get = get = return none if it's not excits, means no error
+        # but make sure change [ ]  to ( ) instead
+        card.title = request.json.get('title') or card.title   #means, if the new update not success, will put the previous one
+        card.description = request.json.get('description') or card.description
+        card.status = request.json.get('status') or card.status
+        card.priority = request.json.get('priority') or card.priority
+        db.session.commit()  #commit = update the data
+        return CardSchema().dump(card)  # single card, not card's'  , delete many = true
+    else:
+        return {'error': f"card not found with id {id}."}, 404
+
+
+@cards_bp.route('/', methods=['POST'])   
+def create_card():
+    # Create a new card model instance
+    card = Card(
+        title = request.json['title'],
+        description = request.json['description'],
+        date = date.today(),
+        status = request.json['status'],
+        priority = request.json['priority'],
+    )
+    #  Add and commit card to db
+    db.session.add(card)
+    db.session.commit()
+    # 
+    return CardSchema().dump(card), 201

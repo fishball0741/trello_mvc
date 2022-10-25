@@ -7,6 +7,13 @@ import os
 def create_app():
     app = Flask(__name__)
 
+    # put here, not below, it's because for do it in global, for applies to all instances
+    # cover the whole app for this.
+    @app.errorhandler(404)
+    def not_found(err):
+        # str(err) = URL error,  err.get_description = html error 
+        return {'error': str(err)}, 404
+
     app.config ['JSON_SORT_KEYS'] = False
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 

@@ -17,3 +17,5 @@ class CardSchema(ma.Schema):
     class Meta:
         fields = ('id', 'title', 'description', 'status', 'priority', 'date')
         ordered = True
+
+        # normally put in another new file, but schema is small so can put in here as well.
