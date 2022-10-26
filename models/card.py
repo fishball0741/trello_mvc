@@ -1,4 +1,5 @@
 from init import db, ma    #< cannot do, because db is in the def
+from marshmallow import fields
 
 
 class Card(db.Model):   #Flask Alchemy data type , defining model
@@ -11,11 +12,22 @@ class Card(db.Model):   #Flask Alchemy data type , defining model
     status = db.Column(db.String)
     priority = db.Column(db.String)
 
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    user = db.relationship('User', back_populates='cards') #one user can have many card'S'
+    comments = db.relationship('Comment', back_populates='card', cascade='all, delete') #because comment only can be one single card
+    # cascade delete, because no card, no comment.
+
+
 
 # put the schema for easy to import together (for small project, otherwise, seperate different file)
 class CardSchema(ma.Schema):
+    user = fields.Nested('UserSchema', only=['name', 'email'])
+    comments = fields.List(fields.Nested('CommentSchema', exclude=['card']))
+
+
     class Meta:
-        fields = ('id', 'title', 'description', 'status', 'priority', 'date')
+        fields = ('id', 'title', 'description', 'status', 'priority', 'date', 'user', 'comments')
         ordered = True
 
         # normally put in another new file, but schema is small so can put in here as well.
