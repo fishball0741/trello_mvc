@@ -1,9 +1,10 @@
+from xml.dom import ValidationErr
 from flask import Flask
 from init import db, ma, bcrypt, jwt
 from controllers.cards_controller import cards_bp
 from controllers.auth_controller import auth_bp
 from controllers.cli_controller import db_commands
-
+from marshmallow.exceptions import ValidationError
 
 import os
 
@@ -11,6 +12,13 @@ import os
 def create_app():
     app = Flask(__name__)
 
+    @app.errorhandler(ValidationError)
+    def validation_error(err):
+        return {'error': err.messages}, 400
+
+    @app.errorhandler(400)
+    def bad_request(err):
+        return {'error': str(err)}, 400
     # put here, not below, it's because for do it in global, for applies to all instances
     # cover the whole app for this.
     @app.errorhandler(404)
@@ -21,6 +29,12 @@ def create_app():
     @app.errorhandler(401)
     def unauthorized(err):
         return {'error': str(err)}, 401
+
+    @app.errorhandler(KeyError)
+    def key_error(err):
+        return {'error': f"The field {err} is required."}, 400
+
+
 
     app.config ['JSON_SORT_KEYS'] = False
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
